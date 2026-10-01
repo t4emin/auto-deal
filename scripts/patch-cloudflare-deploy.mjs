@@ -3,13 +3,13 @@ import { readFile, writeFile } from "node:fs/promises";
 const configPath = new URL("../dist/server/wrangler.json", import.meta.url);
 
 const d1DatabaseId = process.env.CLOUDFLARE_D1_DATABASE_ID;
-const d1DatabaseName = process.env.CLOUDFLARE_D1_DATABASE_NAME || "pcbuild-cms-db";
-const r2BucketName = process.env.CLOUDFLARE_R2_BUCKET_NAME || "pcbuild-product-images";
+const d1DatabaseName = process.env.CLOUDFLARE_D1_DATABASE_NAME || "autodealer-cms-db";
+const r2BucketName = process.env.CLOUDFLARE_R2_BUCKET_NAME || "autodealer-vehicle-images";
 
 try {
   const config = JSON.parse(await readFile(configPath, "utf8"));
 
-  config.name = process.env.CLOUDFLARE_WORKER_NAME || config.name || "pcbuild-cms-26";
+  config.name = process.env.CLOUDFLARE_WORKER_NAME || config.name || "autodealer-cms";
   config.d1_databases = [{
     binding: "DB",
     database_name: d1DatabaseName,

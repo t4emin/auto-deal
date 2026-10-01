@@ -4,53 +4,65 @@ import test from "node:test";
 import { normalizeAffiliateUrl } from "../app/url-utils.ts";
 import { hashPassword,normalizeUsername,validatePassword,validateUsername,verifyPassword } from "../app/auth-crypto.ts";
 
-test("ships the BuildFit landing page and admin console",async()=>{
-  const [page,admin,layout,login]=await Promise.all([
+test("ships the AutoDealer landing page and admin console",async()=>{
+  const [page,admin,layout,login,auth]=await Promise.all([
     readFile(new URL("../app/page.tsx",import.meta.url),"utf8"),
     readFile(new URL("../app/admin/AdminConsole.tsx",import.meta.url),"utf8"),
     readFile(new URL("../app/layout.tsx",import.meta.url),"utf8"),
-    readFile(new URL("../app/login/LoginPanel.tsx",import.meta.url),"utf8")
+    readFile(new URL("../app/login/LoginPanel.tsx",import.meta.url),"utf8"),
+    readFile(new URL("../app/auth.ts",import.meta.url),"utf8")
   ]);
-  assert.match(layout,/BuildFit Backend/);
-  assert.match(page,/Product data that understands PC parts/);
-  assert.match(admin,/เพิ่มสินค้า/);
-  assert.match(admin,/dropzone/);
-  assert.match(admin,/เพิ่มตัวเลือก/);
-  assert.match(admin,/เพิ่มชนิดข้อมูล/);
-  assert.match(admin,/Code สำหรับ API/);
-  assert.match(admin,/ใช้กับหมวดสินค้า/);
-  assert.doesNotMatch(admin,/\bprompt\s*\(/);
-  assert.match(admin,/body\.style\.overflow="hidden"/);
-  assert.match(admin,/body\.style\.position="fixed"/);
-  assert.match(admin,/ผู้ใช้งาน/);
-  assert.match(admin,/ออกจากระบบ/);
-  assert.doesNotMatch(admin,/ลบไม่ได้/);
-  assert.match(login,/สมัครบัญชี/);
-  assert.match(login,/สมัครสำเร็จ/);
-  assert.match(login,/placeholder="Confirm password"/);
-  assert.match(login,/แสดงรหัสผ่าน/);
-  assert.doesNotMatch(login,/manatdev/);
-  assert.match(login,/BuildFit/);
-  assert.doesNotMatch(login,/พื้นที่จัดการข้อมูล/);
+  assert.match(layout,/appConfig\.name/);
+  assert.match(page,/GET \/api\/v1\/vehicles/);
+  assert.match(admin,/Add Vehicle/);
+  assert.match(admin,/VehicleTable/);
+  assert.match(admin,/Add Attribute/);
+  assert.match(admin,/Public endpoints return only available, reserved and sold vehicles/);
+  assert.doesNotMatch(admin,/Compatibility engine/);
+  assert.match(login,/appConfig\.name/);
+  assert.equal(auth.includes("manat"+"dev"),false);
+  assert.match(auth,/BOOTSTRAP_ADMIN_USERNAME/);
 });
 
-test("ships public and protected API routes",async()=>{
+test("ships vehicle API routes and removes public PC routes",async()=>{
   const routes=[
-    "../app/api/v1/products/route.ts",
+    "../app/api/v1/vehicles/route.ts",
+    "../app/api/v1/vehicles/[slug]/route.ts",
     "../app/api/v1/schema/route.ts",
-    "../app/api/v1/compatibility/check/route.ts",
-    "../app/api/admin/products/route.ts",
+    "../app/api/admin/vehicles/route.ts",
     "../app/api/admin/uploads/route.ts",
-    "../app/api/admin/attributes/route.ts"
-    ,"../app/api/auth/login/route.ts"
-    ,"../app/api/auth/register/route.ts"
-    ,"../app/api/auth/logout/route.ts"
-    ,"../app/api/admin/users/route.ts"
+    "../app/api/admin/attributes/route.ts",
+    "../app/api/auth/login/route.ts",
+    "../app/api/auth/register/route.ts",
+    "../app/api/auth/logout/route.ts",
+    "../app/api/admin/users/route.ts"
   ];
   await Promise.all(routes.map(path=>access(new URL(path,import.meta.url))));
-  const compatibility=await readFile(new URL(routes[2],import.meta.url),"utf8");
-  assert.match(compatibility,/score/);
-  assert.match(compatibility,/contained_in/);
+  await assert.rejects(access(new URL("../app/api/v1/com"+"patibility/check/route.ts",import.meta.url)));
+  await assert.rejects(access(new URL("../app/api/v1/pro"+"ducts/route.ts",import.meta.url)));
+  const list=await readFile(new URL(routes[0],import.meta.url),"utf8");
+  const detail=await readFile(new URL(routes[1],import.meta.url),"utf8");
+  assert.match(list,/publicVehicleStatuses/);
+  assert.match(list,/minPriceParam/);
+  assert.match(list,/maxPriceParam/);
+  assert.doesNotMatch(list,/Number\(url\.searchParams\.get\("maxPrice"\) \|\| ""\)/);
+  assert.match(list,/minPrice/);
+  assert.match(list,/bodyType/);
+  assert.match(detail,/status IN \('available','reserved','sold'\)/);
+});
+
+test("defines vehicle schema and demo seed data",async()=>{
+  const [schema,runtime]=await Promise.all([
+    readFile(new URL("../db/schema.ts",import.meta.url),"utf8"),
+    readFile(new URL("../db/runtime.ts",import.meta.url),"utf8")
+  ]);
+  assert.match(schema,/sqliteTable\("vehicles"/);
+  assert.match(schema,/body_type/);
+  assert.match(schema,/dealer_name/);
+  assert.match(runtime,/Toyota GR86/);
+  assert.match(runtime,/battery_capacity/);
+  assert.match(runtime,/status/);
+  assert.doesNotMatch(runtime,/seedProducts/);
 });
 
 test("hashes passwords and validates account credentials",async()=>{
@@ -64,8 +76,8 @@ test("hashes passwords and validates account credentials",async()=>{
   assert.equal(await verifyPassword("wrong password",secured.hash,secured.salt,secured.iterations),false);
 });
 
-test("normalizes pasted affiliate URLs",()=>{
-  assert.equal(normalizeAffiliateUrl("  https://s.shopee.co.th/9AOcemGiaB  "),"https://s.shopee.co.th/9AOcemGiaB");
-  assert.equal(normalizeAffiliateUrl("[Shopee](https://s.shopee.co.th/9AOcemGiaB)"),"https://s.shopee.co.th/9AOcemGiaB");
-  assert.equal(normalizeAffiliateUrl("s.shopee.co.th/9AOcemGiaB"),"https://s.shopee.co.th/9AOcemGiaB");
+test("normalizes pasted contact URLs",()=>{
+  assert.equal(normalizeAffiliateUrl("  https://example.com/contact/gr86  "),"https://example.com/contact/gr86");
+  assert.equal(normalizeAffiliateUrl("[Dealer](https://example.com/contact/gr86)"),"https://example.com/contact/gr86");
+  assert.equal(normalizeAffiliateUrl("example.com/contact/gr86"),"https://example.com/contact/gr86");
 });

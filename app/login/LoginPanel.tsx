@@ -1,5 +1,6 @@
 "use client";
 import { FormEvent,useState } from "react";
+import { appConfig } from "../config";
 
 export default function LoginPanel(){
   const [mode,setMode]=useState<"login"|"register">("login");
@@ -38,7 +39,7 @@ export default function LoginPanel(){
   }
   return <section className="login-panel">
     <div className="login-card">
-      <div className="login-card-head"><span>B</span><div><b>BuildFit</b><small>DATA CONSOLE</small></div></div>
+      <div className="login-card-head"><span>A</span><div><b>{appConfig.name}</b><small>DATA CONSOLE</small></div></div>
       <h2>{mode==="login"?"เข้าสู่ระบบ":"สมัครบัญชี"}</h2>
       <div className="auth-switch">
         <button type="button" className={mode==="login"?"active":""} onClick={()=>switchMode("login")}>เข้าสู่ระบบ</button>

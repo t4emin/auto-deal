@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { appConfig } from "./config";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BuildFit Backend",
-  description: "Product catalog and PC compatibility API.",
+  title: appConfig.name,
+  description: appConfig.description,
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",

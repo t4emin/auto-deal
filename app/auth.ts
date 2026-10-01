@@ -1,9 +1,10 @@
 import { env } from "cloudflare:workers";
 import { ensureDb,getD1 } from "../db/runtime";
+import { appConfig } from "./config";
 import { hashPassword,hashSessionToken,normalizeUsername,randomToken,verifyPassword } from "./auth-crypto";
 
-export const OWNER_USERNAME="manatdev";
-export const SESSION_COOKIE="buildfit_session";
+export const OWNER_USERNAME=normalizeUsername(String((env as unknown as Record<string,unknown>).BOOTSTRAP_ADMIN_USERNAME||"owner"));
+export const SESSION_COOKIE=appConfig.sessionCookie;
 const SESSION_SECONDS=60*60*24*7;
 const MAX_FAILURES=5;
 const LOCK_MINUTES=15;

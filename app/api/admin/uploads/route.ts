@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   if (!file.type.startsWith("image/")) return Response.json({ error: "Only image files are allowed" }, { status: 415 });
   if (file.size > MAX_BYTES) return Response.json({ error: "Maximum image size is 8 MB" }, { status: 413 });
   const extension = file.name.split(".").pop()?.replace(/[^a-z0-9]/gi, "").toLowerCase() || "jpg";
-  const key = `products/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.${extension}`;
+  const key = `vehicles/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.${extension}`;
   await env.PRODUCT_IMAGES.put(key, file.stream(), { httpMetadata: { contentType: file.type } });
   await ensureDb();
   await getD1().prepare("INSERT INTO image_objects (key, filename, content_type, size, created_at) VALUES (?, ?, ?, ?, ?)")
